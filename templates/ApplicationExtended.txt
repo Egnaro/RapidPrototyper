@@ -1,0 +1,64 @@
+component output="false" %appextends% 
+{
+	this.name = "%appname%";
+	this.applicationTimeout = CreateTimeSpan(0,0,10,0);
+	this.clientManagement = true;
+	this.datasource = "%appdsn%";
+	this.sessionManagement = true;
+	this.sessionTimeout = CreateTimeSpan(0,0,10,0);
+	this.setClientCookies = true;
+	this.setDomainCookies = true;
+	this.enablerobustexception = true;
+	
+	// define Mappings
+	mappings = StructNew();
+	mappings["/%appname%"] = "%cfcdir%";
+	this.mappings = mappings;
+	
+	this.ormenabled = true;
+	this.ormsettings.dbcreate = "update";	
+	this.ormsettings.useDBForMapping = false;
+	this.ormsettings.eventHandling = true;
+	this.ormsettings.cfclocation = "/%cfcpath%";
+	this.ormsettings.flushatrequestend = false;
+	this.ormSettings.secondaryCacheEnabled = true;
+	
+	this.ormsettings.logSQL = true;
+		
+	/* **************************** APPLICATION METHODS **************************** */
+
+	/**
+	@hint "Runs when ColdFusion receives the first request for a page in the application."
+	*/
+	public boolean function onApplicationStart() {
+		super.onApplicationStart;
+		
+		application.%appname%.fileuploaddir = "%fileuploaddir%";
+		
+		return true;
+	}
+
+
+	/**
+	@hint "Runs when a request starts."
+	@TargetPage "Path from the web root to the requested page."
+	*/
+	public boolean function onRequestStart(required string TargetPage) {
+		super.onRequestStart;
+		
+		// reload all the ORM settings if required
+		if(!isNull(url.refresh)){
+			this.ormsettings.dbcreate = "update";
+		} else if(!isNull(url.rebuild)){
+			//include "\__lib\_utils\drop_tables.cfm";
+			this.ormsettings.dbcreate = "dropcreate";
+		}
+		
+		if(!isNull(url.rebuild) || !isNull(url.refresh)){
+			ORMReload();
+		}
+		
+		return true;
+	}
+
+}
